@@ -83,11 +83,11 @@ export function CommissionHistoryModal({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-[101] w-[900px] max-h-[90vh] rounded-lg border bg-white shadow-lg flex flex-col">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative z-[10000] w-[900px] max-h-[90vh] rounded-lg border bg-white shadow-lg flex flex-col overflow-hidden">
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-[#5F7C94] text-white rounded-t-lg">
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-[#5F7C94] text-white">
           <h2 className="text-base font-semibold">수수료 변경 이력 - {merchantName}</h2>
           <button
             onClick={onClose}
@@ -235,7 +235,7 @@ export function CommissionHistoryModal({
         )}
 
         {/* 하단 버튼 */}
-        <div className="flex justify-center gap-2 px-4 py-3 border-t bg-white rounded-b-lg">
+        <div className="flex justify-center gap-2 px-4 py-3 border-t bg-white">
           <Button
             onClick={onClose}
             className="bg-gray-600 hover:bg-gray-700 text-white px-6 h-8 text-sm"
