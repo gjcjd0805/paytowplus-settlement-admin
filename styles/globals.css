@@ -19,7 +19,7 @@
     --sidebar-bg: 210 25% 32%;  /* #3a4f63 */
     --sidebar-foreground: 0 0% 100%;
     --sidebar-hover: 210 25% 40%;
-    --sidebar-active: 210 25% 45%;
+    --sidebar-active: 200 80% 45%;  /* 밝은 파란색 */
 
     /* 검색 영역 탭 배경 */
     --tab-bg: 210 17% 82%;  /* #c4cbd4 회색 */
@@ -60,7 +60,7 @@
     --sidebar-bg: 210 25% 32%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-hover: 210 25% 40%;
-    --sidebar-active: 210 25% 45%;
+    --sidebar-active: 200 80% 45%;  /* 밝은 파란색 */
     --tab-bg: 210 17% 25%;
     --tab-active: 210 25% 35%;
     --table-header-bg: 210 17% 30%;

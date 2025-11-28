@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import {
   ChevronDown,
   ChevronRight,
@@ -126,7 +126,27 @@ interface MenuGroup {
 
 function MenuGroupItem({ group }: { group: MenuGroup }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { user, toggleSidebar } = useAppContext()
+
+  // 현재 전체 URL 경로 (pathname + query string)
+  const currentFullPath = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname
+
+  // 메뉴 href와 현재 경로 비교 함수
+  const isItemActive = (itemHref: string | undefined) => {
+    if (!itemHref) return false
+
+    // href에 쿼리 파라미터가 있는 경우
+    if (itemHref.includes('?')) {
+      return currentFullPath === itemHref
+    }
+
+    // href에 쿼리 파라미터가 없는 경우 (예: /company/list)
+    // 현재 경로도 쿼리 파라미터가 없어야 매칭
+    return pathname === itemHref && !searchParams.toString()
+  }
 
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
   const handleMenuClick = () => {
@@ -144,26 +164,35 @@ function MenuGroupItem({ group }: { group: MenuGroup }) {
 
   if (visibleItems.length === 0) return null
 
+  // 현재 경로가 이 그룹의 항목 중 하나와 일치하는지 확인
+  const hasActiveItem = visibleItems.some(item => isItemActive(item.href))
+
   return (
-    <div className="flex items-center px-3 py-1.5 text-[13px] pl-5">
-      <span className="text-white/50 mr-1.5">›</span>
-      {visibleItems.map((item, index) => (
-        <React.Fragment key={index}>
-          {index > 0 && <span className="mx-1.5 text-white/40">|</span>}
-          <Link
-            href={item.href || "#"}
-            onClick={handleMenuClick}
-            className={cn(
-              "transition-colors hover:text-white active:text-white px-1 py-1 whitespace-nowrap",
-              "inline-block min-h-[24px] lg:min-h-0",
-              pathname === item.href && "text-white font-medium",
-              pathname !== item.href && "text-white/80"
-            )}
-          >
-            {item.title}
-          </Link>
-        </React.Fragment>
-      ))}
+    <div className={cn(
+      "flex items-center px-3 py-1.5 text-[13px]",
+      hasActiveItem ? "pl-4 bg-[hsl(var(--sidebar-active))] border-l-4 border-white" : "pl-5"
+    )}>
+      <span className={cn(hasActiveItem ? "text-white mr-1.5" : "text-white/50 mr-1.5")}>›</span>
+      {visibleItems.map((item, index) => {
+        const isActive = isItemActive(item.href)
+        return (
+          <React.Fragment key={index}>
+            {index > 0 && <span className="mx-1.5 text-white/40">|</span>}
+            <Link
+              href={item.href || "#"}
+              onClick={handleMenuClick}
+              className={cn(
+                "transition-colors hover:text-white active:text-white px-1.5 py-0.5 whitespace-nowrap rounded",
+                "inline-block min-h-[24px] lg:min-h-0",
+                isActive && "text-white font-semibold bg-white/25",
+                !isActive && "text-white/80"
+              )}
+            >
+              {item.title}
+            </Link>
+          </React.Fragment>
+        )
+      })}
     </div>
   )
 }
@@ -233,11 +262,12 @@ function MenuItem({ item, level = 0 }: { item: IMenuItem; level?: number }) {
         "flex items-center gap-2 px-3 py-1.5 text-[13px] transition-colors",
         "hover:bg-[hsl(var(--sidebar-hover))] active:bg-[hsl(var(--sidebar-hover))]",
         "min-h-[44px] lg:min-h-0",
-        isActive && "bg-[hsl(var(--sidebar-active))] font-medium",
-        level > 0 && "pl-5"
+        isActive && "bg-[hsl(var(--sidebar-active))] font-semibold border-l-4 border-white",
+        !isActive && level > 0 && "pl-5",
+        isActive && level > 0 && "pl-4"
       )}
     >
-      {level > 0 && <span className="text-white/50">›</span>}
+      {level > 0 && <span className={cn(isActive ? "text-white" : "text-white/50")}>›</span>}
       {item.icon && <item.icon className="h-3.5 w-3.5" />}
       <span>{item.title}</span>
     </Link>
