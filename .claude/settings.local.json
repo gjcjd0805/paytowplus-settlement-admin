@@ -48,7 +48,10 @@
       "Bash(ls:*)",
       "Bash(if not exist \"C:\\workspace\\bluekorea\\dabaedal-settlement_admin\\components\\center\" mkdir \"C:\\workspace\\bluekorea\\dabaedal-settlement_admin\\components\\center\")",
       "Bash(npx shadcn@latest add:*)",
-      "Bash(npx shadcn-ui@latest add switch:*)"
+      "Bash(npx shadcn-ui@latest add switch:*)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(npm ls:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": [],
     "ask": []
