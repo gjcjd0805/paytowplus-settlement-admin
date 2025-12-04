@@ -47,7 +47,7 @@ export function middleware(request: NextRequest) {
   // 공개 경로는 인증 체크 제외
   if (publicPaths.some(path => pathname.startsWith(path))) {
     // 이미 로그인한 사용자가 로그인 페이지 접근 시 메인으로 리다이렉트
-    const token = request.cookies.get('auth_token')?.value
+    const token = request.cookies.get('access_token')?.value
     if (token && isTokenValid(token) && pathname === '/login') {
       return NextResponse.redirect(new URL('/', request.url))
     }
@@ -64,7 +64,7 @@ export function middleware(request: NextRequest) {
   }
 
   // 토큰 확인 (쿠키에서 읽기)
-  const token = request.cookies.get('auth_token')?.value
+  const token = request.cookies.get('access_token')?.value
 
   // 토큰이 없거나 유효하지 않으면 로그인 페이지로 리다이렉트
   if (!token || !isTokenValid(token)) {

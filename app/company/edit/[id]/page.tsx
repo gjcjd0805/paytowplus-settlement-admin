@@ -227,6 +227,27 @@ export default function CompanyEditPage() {
       if (!formData.representativeName.trim()) {
         throw new Error("대표자명은 필수입니다.")
       }
+      if (!formData.companyName.trim()) {
+        throw new Error("회사명은 필수입니다.")
+      }
+
+      // 담당자 정보 필수 검증
+      if (!formData.managerName.trim()) {
+        throw new Error("담당자는 필수입니다.")
+      }
+      if (!formData.managerContact.trim()) {
+        throw new Error("담당자연락처는 필수입니다.")
+      }
+      if (!formData.managerEmail.trim()) {
+        throw new Error("담당자이메일은 필수입니다.")
+      }
+
+      // 이메일 형식 검증
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.managerEmail.trim())) {
+        throw new Error("담당자 이메일 형식이 올바르지 않습니다.")
+      }
+
       if (!formData.bankName.trim()) {
         throw new Error("입금은행명은 필수입니다.")
       }
@@ -235,14 +256,6 @@ export default function CompanyEditPage() {
       }
       if (!formData.accountNumber.trim()) {
         throw new Error("계좌번호는 필수입니다.")
-      }
-
-      // 이메일 형식 검증
-      if (formData.managerEmail.trim()) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(formData.managerEmail.trim())) {
-          throw new Error("담당자 이메일 형식이 올바르지 않습니다.")
-        }
       }
 
       // 비밀번호 검증 (입력된 경우에만)
@@ -434,27 +447,29 @@ export default function CompanyEditPage() {
 
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-xs">담당자명</Label>
+                    <Label className="text-xs">담당자 <span className="text-red-500">*</span></Label>
                     <Input
                       name="managerName"
                       value={formData.managerName}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="담당자명"
+                      required
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">담당자연락처</Label>
+                    <Label className="text-xs">담당자연락처 <span className="text-red-500">*</span></Label>
                     <Input
                       name="managerContact"
                       value={formData.managerContact}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="'-' 제외 숫자만 입력"
+                      required
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">담당자이메일</Label>
+                    <Label className="text-xs">담당자이메일 <span className="text-red-500">*</span></Label>
                     <Input
                       name="managerEmail"
                       type="email"
@@ -462,6 +477,7 @@ export default function CompanyEditPage() {
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="email@example.com"
+                      required
                     />
                   </div>
                 </div>
@@ -474,13 +490,14 @@ export default function CompanyEditPage() {
               <div className="p-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs">회사명</Label>
+                    <Label className="text-xs">회사명 <span className="text-red-500">*</span></Label>
                     <Input
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="회사명"
+                      required
                     />
                   </div>
                   <div>

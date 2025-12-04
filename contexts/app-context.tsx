@@ -1,11 +1,18 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
 import type { PaymentPurposeType } from "@/lib/enums"
 import { PaymentPurpose } from "@/lib/enums"
 import type { IUser } from "@/types"
-import { tokenManager } from "@/lib/api"
-import { decodeJwtPayload, isTokenExpired } from "@/lib/utils/jwt"
+import { authApi, tokenManager } from "@/lib/api"
+import { clearAuth } from "@/lib/utils/auth"
+import { FullScreenLoading } from "@/components/common/full-screen-loading"
+
+interface GlobalLoadingState {
+  isLoading: boolean
+  message?: string
+  subMessage?: string
+}
 
 interface AppContextType {
   centerId: number | null
@@ -18,11 +25,13 @@ interface AppContextType {
   setCenterId: (id: number) => void
   setPaymentPurpose: (purpose: PaymentPurposeType) => void
   setUser: (user: IUser | null) => void
-  logout: () => void
+  logout: () => Promise<void>
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   toggleTheme: () => void
   setTheme: (theme: "light" | "dark") => void
+  showLoading: (message?: string, subMessage?: string) => void
+  hideLoading: () => void
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -35,74 +44,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpenState] = useState(true)
   const [theme, setThemeState] = useState<"light" | "dark">("light")
   const [isInitialized, setIsInitialized] = useState(false)
+  const [globalLoading, setGlobalLoading] = useState<GlobalLoadingState>({
+    isLoading: false
+  })
 
-  // localStorage에서 초기값 로드 (클라이언트에서만)
+  // localStorage에서 초기값 로드 및 토큰 유효성 확인
+  // 토큰은 httpOnly 쿠키에 저장되어 있으므로 서버 API로 유효성 확인
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const token = tokenManager.get()
-    const savedPurpose = localStorage.getItem('paymentPurpose')
-    const savedUser = localStorage.getItem('user')
-    const savedSidebar = localStorage.getItem('sidebar-storage')
-    const savedTheme = localStorage.getItem('theme-storage')
+    const initializeAuth = async () => {
+      const savedPurpose = localStorage.getItem('paymentPurpose')
+      const savedUser = localStorage.getItem('user')
+      const savedSidebar = localStorage.getItem('sidebar-storage')
+      const savedTheme = localStorage.getItem('theme-storage')
 
-    // 토큰이 있고 만료되지 않은 경우
-    if (token && !isTokenExpired(token)) {
-      // JWT payload에서 보안이 필요한 정보 추출
-      const payload = decodeJwtPayload(token)
-
+      // 저장된 사용자 정보가 있으면 토큰 유효성 확인
       if (savedUser) {
         try {
-          const userData = JSON.parse(savedUser)
+          // 서버에서 토큰 유효성 확인
+          const isValid = await tokenManager.verify()
 
-          // level, companyId, centerId는 JWT에서 추출하여 덮어씀 (보안)
-          const secureUserData: IUser = {
-            ...userData,
-            level: payload?.level ?? userData.level,
-            companyId: payload?.companyId ?? userData.companyId,
-            centerId: payload?.centerId ?? userData.centerId,
-          }
+          if (isValid) {
+            const userData = JSON.parse(savedUser) as IUser
+            setUserState(userData)
+            setIsAuthenticated(true)
 
-          setUserState(secureUserData)
-          setIsAuthenticated(true)
-
-          // centerId는 JWT에서 추출한 값 사용
-          if (payload?.centerId) {
-            setCenterIdState(payload.centerId)
+            // centerId 설정
+            if (userData.centerId) {
+              setCenterIdState(userData.centerId)
+            }
+          } else {
+            // 토큰이 유효하지 않으면 사용자 정보 제거
+            localStorage.removeItem('user')
+            setUserState(null)
+            setIsAuthenticated(false)
           }
         } catch (error) {
-          console.error('사용자 정보 파싱 실패:', error)
+          console.error('인증 초기화 실패:', error)
           localStorage.removeItem('user')
         }
       }
-    } else if (token) {
-      // 토큰이 만료된 경우 정리
-      tokenManager.remove()
-      localStorage.removeItem('user')
+
+      if (savedPurpose) {
+        setPaymentPurposeState(savedPurpose as PaymentPurposeType)
+      }
+      if (savedSidebar) {
+        try {
+          const sidebarData = JSON.parse(savedSidebar)
+          setSidebarOpenState(sidebarData.state?.isOpen ?? true)
+        } catch (error) {
+          console.error('사이드바 정보 파싱 실패:', error)
+        }
+      }
+      if (savedTheme) {
+        try {
+          const themeData = JSON.parse(savedTheme)
+          setThemeState(themeData.state?.theme ?? "light")
+        } catch (error) {
+          console.error('테마 정보 파싱 실패:', error)
+        }
+      }
+
+      // 초기화 완료
+      setIsInitialized(true)
     }
 
-    if (savedPurpose) {
-      setPaymentPurposeState(savedPurpose as PaymentPurposeType)
-    }
-    if (savedSidebar) {
-      try {
-        const sidebarData = JSON.parse(savedSidebar)
-        setSidebarOpenState(sidebarData.state?.isOpen ?? true)
-      } catch (error) {
-        console.error('사이드바 정보 파싱 실패:', error)
-      }
-    }
-    if (savedTheme) {
-      try {
-        const themeData = JSON.parse(savedTheme)
-        setThemeState(themeData.state?.theme ?? "light")
-      } catch (error) {
-        console.error('테마 정보 파싱 실패:', error)
-      }
-    }
-
-    // 초기화 완료
-    setIsInitialized(true)
+    initializeAuth()
   }, [])
 
   const setCenterId = (id: number) => {
@@ -117,31 +125,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setUser = (user: IUser | null) => {
     if (user) {
-      // JWT에서 보안이 필요한 정보 추출
-      const token = tokenManager.get()
-      let secureUser = user
-
-      if (token && !isTokenExpired(token)) {
-        const payload = decodeJwtPayload(token)
-        if (payload) {
-          // level, companyId, centerId는 JWT에서 추출하여 덮어씀 (보안)
-          secureUser = {
-            ...user,
-            level: payload.level ?? user.level,
-            companyId: payload.companyId ?? user.companyId,
-            centerId: payload.centerId ?? user.centerId,
-          }
-
-          // centerId도 함께 설정
-          if (payload.centerId) {
-            setCenterIdState(payload.centerId)
-          }
-        }
-      }
-
-      localStorage.setItem('user', JSON.stringify(secureUser))
-      setUserState(secureUser)
+      // 사용자 정보 저장
+      localStorage.setItem('user', JSON.stringify(user))
+      setUserState(user)
       setIsAuthenticated(true)
+
+      // centerId 설정
+      if (user.centerId) {
+        setCenterIdState(user.centerId)
+      }
     } else {
       localStorage.removeItem('user')
       setUserState(null)
@@ -149,14 +141,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    // tokenManager를 사용하여 토큰 제거 (쿠키도 함께 제거됨)
-    tokenManager.remove()
+  const logout = async () => {
+    try {
+      // 서버 로그아웃 API 호출하여 httpOnly 쿠키 제거
+      await authApi.logout()
+    } catch (error) {
+      console.error('로그아웃 API 호출 실패:', error)
+    }
 
-    // 나머지 localStorage 데이터 제거
-    localStorage.removeItem('user')
-    localStorage.removeItem('centerId')
-    localStorage.removeItem('paymentPurpose')
+    // localStorage 데이터 및 상태 정리
+    clearAuth()
 
     // 상태 초기화
     setUserState(null)
@@ -187,6 +181,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('theme-storage', JSON.stringify({ state: { theme: newTheme } }))
   }
 
+  const showLoading = useCallback((message?: string, subMessage?: string) => {
+    setGlobalLoading({ isLoading: true, message, subMessage })
+  }, [])
+
+  const hideLoading = useCallback(() => {
+    setGlobalLoading({ isLoading: false })
+  }, [])
+
   return (
     <AppContext.Provider value={{
       centerId,
@@ -203,9 +205,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleSidebar,
       setSidebarOpen,
       toggleTheme,
-      setTheme
+      setTheme,
+      showLoading,
+      hideLoading
     }}>
       {children}
+      {globalLoading.isLoading && (
+        <FullScreenLoading
+          message={globalLoading.message}
+          subMessage={globalLoading.subMessage}
+        />
+      )}
     </AppContext.Provider>
   )
 }

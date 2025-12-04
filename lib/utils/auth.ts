@@ -12,30 +12,12 @@ export function getCenterId(): number {
 }
 
 /**
- * localStorage에서 사용자 정보 가져오기
- */
-export function getUserInfo() {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  const userStr = localStorage.getItem('user')
-  if (!userStr) return null
-
-  try {
-    return JSON.parse(userStr)
-  } catch {
-    return null
-  }
-}
-
-/**
  * localStorage 초기화 (로그아웃 시)
  */
 export function clearAuth() {
   if (typeof window === 'undefined') return
 
-  localStorage.removeItem('token')
+  localStorage.removeItem('paymentPurpose')
   localStorage.removeItem('user')
   localStorage.removeItem('centerId')
 }

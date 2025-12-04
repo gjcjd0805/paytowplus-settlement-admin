@@ -4,8 +4,6 @@ import { useState } from "react"
 import Image from "next/image"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { tokenManager } from "@/lib/api"
-import { useRouter } from "next/navigation"
 import { CenterSelect } from "@/components/common/center-select"
 import { PaymentPurposeSelect } from "@/components/common/payment-purpose-select"
 import { CenterManagementModal } from "@/components/center/center-management-modal"
@@ -13,17 +11,18 @@ import { useAppContext } from "@/contexts/app-context"
 import type { PaymentPurposeType } from "@/lib/enums"
 
 export function Header() {
-  const router = useRouter()
-  const { user, logout, setCenterId, setPaymentPurpose, toggleSidebar } = useAppContext()
+  const { user, logout, setCenterId, setPaymentPurpose, toggleSidebar, showLoading } = useAppContext()
   const [centerModalOpen, setCenterModalOpen] = useState(false)
 
-  const handleLogout = () => {
-    
-    // 로그인 페이지로 이동 (브라우저 네비게이션 사용)
+  const handleLogout = async () => {
+    // 전역 로딩 표시
+    showLoading("로그아웃 중...")
+
+    // logout() 완료 대기 (쿠키 제거 후 리다이렉트해야 middleware에서 '/'로 보내지 않음)
+    await logout()
+
+    // 로그인 페이지로 이동
     window.location.href = "/login"
-    
-    // Context의 logout 함수가 모든 작업을 수행
-    logout()
   }
 
   const handleCenterChange = (centerId: number) => {

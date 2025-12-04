@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { authApi, tokenManager } from "@/lib/api"
+import { authApi } from "@/lib/api"
 import { useAppContext } from "@/contexts/app-context"
 import { IUser } from "@/types"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { setUser, setCenterId } = useAppContext()
+  const { setUser, setCenterId, showLoading } = useAppContext()
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -32,15 +32,13 @@ function LoginForm() {
         password: formData.password
       })
 
-      // API 응답 구조: { data: { token, loginId, centerId, level, levelName } }
+      // API 응답 구조: { data: { loginId, centerId, level, levelName, name, companyId } }
+      // 토큰은 httpOnly 쿠키로 자동 설정됨 (서버에서 Set-Cookie 헤더로 전달)
       const data = response.data
 
-      if (!data || !data.token) {
-        throw new Error("토큰을 받지 못했습니다.")
+      if (!data) {
+        throw new Error("로그인 응답을 받지 못했습니다.")
       }
-
-      // 토큰 저장 (localStorage)
-      tokenManager.set(data.token)
 
       // 사용자 정보 구성 (로그인 응답 사용)
       const user: IUser = {
@@ -60,13 +58,15 @@ function LoginForm() {
         setCenterId(user.centerId)
       }
 
+      // 전역 로딩 표시
+      showLoading("로그인중...")
+
       // 원래 가려던 페이지로 이동 또는 결제내역 페이지로
       const from = searchParams.get('from') || '/payment/list'
       router.replace(from)
     } catch (err: any) {
       console.error("Login error:", err)
       setError(err.response?.data?.message || err.message || "로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.")
-    } finally {
       setLoading(false)
     }
   }

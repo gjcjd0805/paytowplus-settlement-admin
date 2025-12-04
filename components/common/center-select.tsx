@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { centersApi, type Center, tokenManager } from "@/lib/api"
+import { centersApi, type Center } from "@/lib/api"
+import { useAppContext } from "@/contexts/app-context"
 
 interface CenterSelectProps {
   value?: number
@@ -12,6 +13,7 @@ interface CenterSelectProps {
 }
 
 export function CenterSelect({ value, onChange, className = "", disabled = false, userCenterId }: CenterSelectProps) {
+  const { isAuthenticated } = useAppContext()
   const [centers, setCenters] = useState<Center[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCenterId, setSelectedCenterId] = useState<number | undefined>(value)
@@ -19,8 +21,8 @@ export function CenterSelect({ value, onChange, className = "", disabled = false
   // 센터 목록 로드
   useEffect(() => {
     const loadCenters = async () => {
-      // 토큰이 없으면 API 호출하지 않음 (로그아웃 중일 수 있음)
-      if (!tokenManager.get()) {
+      // 인증되지 않은 상태면 API 호출하지 않음 (로그아웃 중일 수 있음)
+      if (!isAuthenticated) {
         setLoading(false)
         return
       }
@@ -60,7 +62,7 @@ export function CenterSelect({ value, onChange, className = "", disabled = false
 
     loadCenters()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disabled, userCenterId])
+  }, [disabled, userCenterId, isAuthenticated])
 
   // value prop이 변경되면 selectedCenterId 업데이트
   useEffect(() => {

@@ -198,26 +198,65 @@ export default function MerchantRegisterHeadquarters() {
         throw new Error("가맹점명은 필수입니다.")
       }
 
-      // 이메일 형식 검증
-      if (trimmedData.managerEmail) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(trimmedData.managerEmail)) {
-          throw new Error("담당자 이메일 형식이 올바르지 않습니다.")
-        }
+      // 대표자 정보 필수 검증
+      if (!trimmedData.representativeName) {
+        throw new Error("대표자명은 필수입니다.")
+      }
+      if (!trimmedData.representativeIdNumber) {
+        throw new Error("대표자주민번호는 필수입니다.")
+      }
+      if (!trimmedData.representativeAddress) {
+        throw new Error("대표자주소는 필수입니다.")
       }
 
-      // 수수료율 범위 검증
-      if (trimmedData.deliveryFeeCommissionRate) {
-        const rate = Number(trimmedData.deliveryFeeCommissionRate)
-        if (isNaN(rate) || rate < 0 || rate > 100) {
-          throw new Error("배달비 수수료율은 0~100 사이의 숫자여야 합니다.")
-        }
+      // 담당자 정보 필수 검증
+      if (!trimmedData.managerName) {
+        throw new Error("담당자는 필수입니다.")
       }
+      if (!trimmedData.managerPhone) {
+        throw new Error("담당자연락처는 필수입니다.")
+      }
+      if (!trimmedData.managerEmail) {
+        throw new Error("담당자이메일은 필수입니다.")
+      }
+
+      // 이메일 형식 검증
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(trimmedData.managerEmail)) {
+        throw new Error("담당자 이메일 형식이 올바르지 않습니다.")
+      }
+
+      // 정산계좌 정보 필수 검증
+      if (!trimmedData.settlementAccountHolder) {
+        throw new Error("예금주는 필수입니다.")
+      }
+      if (!trimmedData.settlementAccount) {
+        throw new Error("계좌번호는 필수입니다.")
+      }
+
+      // 배달비 수수료율 필수 검증
+      if (!trimmedData.deliveryFeeCommissionRate) {
+        throw new Error("배달비 수수료율은 필수입니다.")
+      }
+      const deliveryRate = Number(trimmedData.deliveryFeeCommissionRate)
+      if (isNaN(deliveryRate) || deliveryRate < 0 || deliveryRate > 100) {
+        throw new Error("배달비 수수료율은 0~100 사이의 숫자여야 합니다.")
+      }
+
+      // 월세 수수료율 범위 검증 (선택)
       if (trimmedData.monthlyRentCommissionRate) {
         const rate = Number(trimmedData.monthlyRentCommissionRate)
         if (isNaN(rate) || rate < 0 || rate > 100) {
           throw new Error("월세 수수료율은 0~100 사이의 숫자여야 합니다.")
         }
+      }
+
+      // 결제한도 필수 검증
+      if (!trimmedData.paymentLimitPerTransaction) {
+        throw new Error("결제한도(건)는 필수입니다.")
+      }
+      if (!trimmedData.paymentLimitPerMonth) {
+        throw new Error("결제한도(월)는 필수입니다.")
       }
 
       const centerId = 1
@@ -399,61 +438,66 @@ export default function MerchantRegisterHeadquarters() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs">대표자명</Label>
+                    <Label className="text-xs">대표자명 <span className="text-red-500">*</span></Label>
                     <Input
                       name="representativeName"
                       value={formData.representativeName}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="대표자명"
+                      required
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">대표자주민번호</Label>
+                    <Label className="text-xs">대표자주민번호 <span className="text-red-500">*</span></Label>
                     <Input
                       name="representativeIdNumber"
                       value={formData.representativeIdNumber}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="'-' 제외 숫자만 입력"
+                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-xs">대표자주소</Label>
+                  <Label className="text-xs">대표자주소 <span className="text-red-500">*</span></Label>
                   <Input
                     name="representativeAddress"
                     value={formData.representativeAddress}
                     onChange={handleChange}
                     className="h-8 text-xs"
                     placeholder="대표자주소"
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-xs">담당자</Label>
+                    <Label className="text-xs">담당자 <span className="text-red-500">*</span></Label>
                     <Input
                       name="managerName"
                       value={formData.managerName}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="담당자명"
+                      required
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">담당자연락처</Label>
+                    <Label className="text-xs">담당자연락처 <span className="text-red-500">*</span></Label>
                     <Input
                       name="managerPhone"
                       value={formData.managerPhone}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="'-' 제외 숫자만 입력"
+                      required
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">담당자이메일</Label>
+                    <Label className="text-xs">담당자이메일 <span className="text-red-500">*</span></Label>
                     <Input
                       name="managerEmail"
                       type="email"
@@ -461,6 +505,7 @@ export default function MerchantRegisterHeadquarters() {
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="email@example.com"
+                      required
                     />
                   </div>
                 </div>
@@ -601,7 +646,7 @@ export default function MerchantRegisterHeadquarters() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs">배달비 수수료율</Label>
+                    <Label className="text-xs">배달비 수수료율 <span className="text-red-500">*</span></Label>
                     <Input
                       name="deliveryFeeCommissionRate"
                       type="number"
@@ -610,6 +655,7 @@ export default function MerchantRegisterHeadquarters() {
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="3.5"
+                      required
                     />
                   </div>
                   <div>
@@ -649,23 +695,25 @@ export default function MerchantRegisterHeadquarters() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs">결제한도(건)</Label>
+                    <Label className="text-xs">결제한도(건) <span className="text-red-500">*</span></Label>
                     <Input
                       name="paymentLimitPerTransaction"
                       value={formData.paymentLimitPerTransaction}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="3000000"
+                      required
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">결제한도(월)</Label>
+                    <Label className="text-xs">결제한도(월) <span className="text-red-500">*</span></Label>
                     <Input
                       name="paymentLimitPerMonth"
                       value={formData.paymentLimitPerMonth}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="100000000"
+                      required
                     />
                   </div>
                 </div>
@@ -686,25 +734,27 @@ export default function MerchantRegisterHeadquarters() {
                       </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">예금주</Label>
+                    <Label className="text-xs">예금주 <span className="text-red-500">*</span></Label>
                     <Input
                       name="settlementAccountHolder"
                       value={formData.settlementAccountHolder}
                       onChange={handleChange}
                       className="h-8 text-xs"
                       placeholder="예금주명"
+                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-xs">계좌번호</Label>
+                  <Label className="text-xs">계좌번호 <span className="text-red-500">*</span></Label>
                   <Input
                     name="settlementAccount"
                     value={formData.settlementAccount}
                     onChange={handleChange}
                     className="h-8 text-xs"
                     placeholder="'-' 제외 숫자만 입력"
+                    required
                   />
                 </div>
               </div>

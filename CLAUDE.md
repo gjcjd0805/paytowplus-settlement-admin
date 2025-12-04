@@ -7,7 +7,7 @@
 - **프로젝트명**: 다배달 정산 관리자 시스템
 - **기술 스택**: Next.js 15, React 18, TypeScript, Tailwind CSS
 - **기본 포트**: 3100
-- **마지막 업데이트**: 2025-11-28
+- **마지막 업데이트**: 2025-12-05
 
 ## 목차
 
@@ -29,6 +29,12 @@
 ```
 dabaedal-settlement_admin/
 ├── app/                          # Next.js App Router 페이지
+│   ├── api/                      # BFF API Routes (백엔드 프록시)
+│   │   ├── auth/                 # 인증 API
+│   │   │   ├── login/route.ts
+│   │   │   ├── logout/route.ts
+│   │   │   └── verify/route.ts
+│   │   └── [...path]/route.ts    # 동적 프록시
 │   ├── company/                  # 업체 관리
 │   │   ├── list/page.tsx
 │   │   ├── register/page.tsx
@@ -69,6 +75,7 @@ dabaedal-settlement_admin/
 │   │   ├── data-table.tsx
 │   │   ├── pagination.tsx
 │   │   ├── loading-modal.tsx
+│   │   ├── full-screen-loading.tsx  # 전체 화면 로딩 (페이지 전환용)
 │   │   ├── data-count-page-size.tsx
 │   │   ├── search-section.tsx
 │   │   ├── center-select.tsx
@@ -398,14 +405,30 @@ import { api } from '@/lib/api'
 await api.companies.findAll({ centerId: 1 })
 ```
 
+## BFF 패턴 (Backend For Frontend)
+
+클라이언트는 Next.js API Route(`/api/*`)를 통해 백엔드와 통신합니다.
+
+```
+클라이언트 → /api/* → Next.js API Route → 백엔드 서버
+```
+
+- JWT 토큰은 **httpOnly 쿠키**로 관리 (XSS 방지)
+- 클라이언트에서 토큰에 직접 접근 불가
+- API Route에서 쿠키를 읽어 백엔드로 전달
+
 ## 토큰 관리
 
 ```typescript
 import { tokenManager } from '@/lib/api'
 
-tokenManager.set('token...')  // 저장
-tokenManager.get()            // 조회
-tokenManager.remove()         // 제거
+// 토큰 유효성 확인 (서버 API 호출)
+const isValid = await tokenManager.verify()
+
+// ⚠️ 아래 메서드는 deprecated (httpOnly 쿠키 사용으로 더 이상 사용하지 않음)
+tokenManager.get()     // deprecated - 항상 null 반환
+tokenManager.set()     // deprecated - 아무 동작 없음
+tokenManager.remove()  // deprecated - authApi.logout() 사용
 ```
 
 ---
@@ -780,6 +803,27 @@ interface Column<T> {
 
 **규칙**: 모든 목록 페이지에서 LoadingModal 사용 (DataTable의 loading 속성 사용 X)
 
+## FullScreenLoading
+
+페이지 전환 시 전체 화면 로딩을 표시합니다. AppContext의 `showLoading`/`hideLoading`을 통해 제어합니다.
+
+```typescript
+import { useAppContext } from "@/contexts/app-context"
+
+const { showLoading, hideLoading } = useAppContext()
+
+// 로딩 표시
+showLoading("로그인 성공!", "페이지를 이동하고 있습니다...")
+
+// 로딩 숨김 (페이지 전환 시 자동으로 호출됨)
+hideLoading()
+```
+
+**특징**:
+- 전역 상태로 관리되어 어디서든 호출 가능
+- 페이지 전환(pathname 변경) 시 자동으로 로딩 해제
+- 로그인/로그아웃 시 매끄러운 화면 전환 제공
+
 ## DataCountPageSize
 
 ```typescript
@@ -864,7 +908,10 @@ const {
   theme, toggleTheme, setTheme,
 
   // 초기화 상태
-  isInitialized
+  isInitialized,
+
+  // 전역 로딩 (페이지 전환용)
+  showLoading, hideLoading
 } = useAppContext()
 ```
 
@@ -881,18 +928,31 @@ interface IUser {
 }
 ```
 
-### JWT 토큰 기반 보안
+### 인증 방식 (httpOnly 쿠키)
 
-- `level`, `companyId`, `centerId`는 JWT payload에서 추출하여 사용 (localStorage 조작 방지)
+- JWT 토큰은 **httpOnly 쿠키**에 저장 (XSS 공격 방지)
+- 클라이언트에서 토큰에 직접 접근 불가
+- 토큰 유효성은 서버 API(`/api/auth/verify`)로 확인
 - 토큰 만료 시 자동으로 로그아웃 처리
+- middleware에서 쿠키 기반 인증 체크
+
+### 인증 흐름
+
+```
+1. 로그인 → 서버에서 httpOnly 쿠키로 토큰 설정
+2. 앱 초기화 → tokenManager.verify()로 토큰 유효성 확인
+3. API 호출 → 쿠키가 자동으로 전송됨
+4. 로그아웃 → authApi.logout()으로 쿠키 제거
+```
 
 ## localStorage 키
-- `user`: 사용자 정보 (JSON)
-- `token`: JWT 토큰
+- `user`: 사용자 정보 (JSON) - UI 표시용
 - `centerId`: 선택된 센터 ID
 - `paymentPurpose`: 선택된 결제 목적 (DELIVERY_CHARGE | MONTHLY_RENT)
 - `sidebar-storage`: 사이드바 상태 (JSON)
 - `theme-storage`: 테마 설정 (JSON)
+
+> ⚠️ `token`은 더 이상 localStorage에 저장하지 않음 (httpOnly 쿠키 사용)
 
 ---
 

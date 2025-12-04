@@ -5,12 +5,11 @@ import { usePathname, useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Sidebar } from "@/components/layout/sidebar"
 import { useAppContext } from "@/contexts/app-context"
-import { tokenManager } from "@/lib/api"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isAuthenticated, setUser, user, isInitialized } = useAppContext()
+  const { isAuthenticated, isInitialized, hideLoading } = useAppContext()
   const [isLoading, setIsLoading] = useState(true)
 
   const onLogin = pathname === "/login"
@@ -21,35 +20,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // 간단한 퍼블릭 경로 화이트리스트 (필요시 확장)
   const isPublic = useMemo(() => onLogin || pathname?.startsWith("/api"), [onLogin, pathname])
 
+  // 페이지 전환 시 전역 로딩 해제
+  useEffect(() => {
+    hideLoading()
+  }, [pathname, hideLoading])
+
   // 페이지 로드 시 인증 확인 (Context 초기화 대기)
+  // 토큰은 httpOnly 쿠키에 저장되어 클라이언트에서 접근 불가
+  // 인증 상태는 Context의 isAuthenticated (localStorage의 user 정보 기반)로 판단
   useEffect(() => {
     if (!isInitialized) return // Context가 localStorage를 로드할 때까지 대기
-
-    const initAuth = async () => {
-      const token = tokenManager.get()
-
-      // 토큰은 있는데 사용자 정보가 없으면 토큰 제거
-      if (token && !user) {
-        tokenManager.remove()
-        if (!isPublic) {
-          router.replace("/login")
-        }
-      } else if (!token && user) {
-        // 사용자 정보는 있는데 토큰이 없으면 사용자 정보 제거
-        setUser(null)
-        if (!isPublic) {
-          router.replace("/login")
-        }
-      }
-
-      setIsLoading(false)
-    }
-
-    initAuth()
-  }, [isInitialized, user, isPublic, router, setUser])
+    setIsLoading(false)
+  }, [isInitialized])
 
   useEffect(() => {
-    if (!isLoading && !isPublic && !isAuthenticated && !tokenManager.get()) {
+    if (!isLoading && !isPublic && !isAuthenticated) {
       router.replace("/login")
     }
   }, [isAuthenticated, isPublic, router, isLoading])
