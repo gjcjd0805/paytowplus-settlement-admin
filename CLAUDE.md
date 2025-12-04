@@ -7,7 +7,7 @@
 - **프로젝트명**: 다배달 정산 관리자 시스템
 - **기술 스택**: Next.js 15, React 18, TypeScript, Tailwind CSS
 - **기본 포트**: 3100
-- **마지막 업데이트**: 2025-11-26
+- **마지막 업데이트**: 2025-11-28
 
 ## 목차
 
@@ -40,12 +40,29 @@ dabaedal-settlement_admin/
 │   │   ├── register/page.tsx
 │   │   └── edit/[id]/page.tsx
 │   ├── terminal/                 # 터미널 관리
+│   │   ├── list/page.tsx
+│   │   ├── register/page.tsx
+│   │   └── edit/[id]/page.tsx
 │   ├── payment/                  # 결제 관리
+│   │   ├── list/page.tsx
+│   │   ├── simple/page.tsx
+│   │   ├── deferred/page.tsx
+│   │   ├── unregistered/page.tsx
+│   │   └── receipt/page.tsx
 │   ├── settlement/               # 정산 관리
 │   │   ├── amount/page.tsx
+│   │   ├── amount/branch/page.tsx
+│   │   ├── amount/distributor/page.tsx
+│   │   ├── amount/agent/page.tsx
 │   │   ├── hierarchical/page.tsx
+│   │   ├── hierarchical/detail/page.tsx
 │   │   └── merchant/
+│   │       ├── daily/page.tsx
+│   │       ├── period/page.tsx
+│   │       └── sales/page.tsx
 │   ├── notice/                   # 공지사항 관리
+│   │   ├── list/page.tsx
+│   │   └── register/page.tsx
 │   └── login/page.tsx
 ├── components/
 │   ├── common/                   # 공통 컴포넌트
@@ -53,15 +70,37 @@ dabaedal-settlement_admin/
 │   │   ├── pagination.tsx
 │   │   ├── loading-modal.tsx
 │   │   ├── data-count-page-size.tsx
+│   │   ├── search-section.tsx
+│   │   ├── center-select.tsx
+│   │   ├── payment-purpose-select.tsx
 │   │   └── index.ts
 │   ├── layout/                   # 레이아웃 컴포넌트
 │   │   ├── app-shell.tsx
 │   │   ├── header.tsx
 │   │   └── sidebar.tsx
 │   ├── ui/                       # shadcn/ui 컴포넌트
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── select.tsx
+│   │   ├── textarea.tsx
+│   │   ├── dialog.tsx
+│   │   └── switch.tsx
+│   ├── center/                   # 센터 관련 컴포넌트
+│   │   └── center-management-modal.tsx
 │   ├── company/                  # 업체 관련 컴포넌트
+│   │   ├── company-code-search-modal.tsx
+│   │   └── commission-history-modal.tsx
 │   ├── merchant/                 # 가맹점 관련 컴포넌트
-│   └── settlement/               # 정산 관련 컴포넌트
+│   │   └── merchant-code-search-modal.tsx
+│   ├── commission/               # 수수료 관련 컴포넌트
+│   │   └── commission-history-modal.tsx
+│   ├── notice/                   # 공지사항 관련 컴포넌트
+│   │   └── notice-detail-modal.tsx
+│   ├── settlement/               # 정산 관련 컴포넌트
+│   │   └── hierarchical-statistics-modal.tsx
+│   └── providers/                # Provider 컴포넌트
+│       └── theme-provider.tsx
 ├── hooks/                        # 커스텀 훅
 │   ├── index.ts
 │   ├── useApiError.ts
@@ -73,15 +112,36 @@ dabaedal-settlement_admin/
 │   │   ├── client.ts
 │   │   ├── types.ts
 │   │   ├── index.ts
-│   │   └── [도메인별].ts
+│   │   ├── auth.ts
+│   │   ├── centers.ts
+│   │   ├── users.ts
+│   │   ├── companies.ts
+│   │   ├── merchants.ts
+│   │   ├── terminals.ts
+│   │   ├── commissions.ts
+│   │   ├── payments.ts
+│   │   ├── settlements.ts
+│   │   ├── sales.ts
+│   │   ├── notices.ts
+│   │   └── totp.ts
 │   ├── constants.ts              # 상수 정의
+│   ├── constants/                # 상수 모듈
+│   │   └── banks.ts
 │   ├── enums.ts                  # Enum 및 Helper
+│   ├── utils.ts                  # 유틸리티 함수
 │   └── utils/
 │       ├── auth.ts
-│       └── dateUtils.ts
-├── contexts/                     # React Context
-│   └── app-context.tsx
-└── store/                        # 전역 상태 (필요시)
+│       ├── dateUtils.ts
+│       └── jwt.ts
+├── types/                        # 타입 정의
+│   ├── index.ts
+│   ├── company.ts
+│   ├── merchant.ts
+│   ├── terminal.ts
+│   ├── payment.ts
+│   └── notice.ts
+└── contexts/                     # React Context
+    └── app-context.tsx
 ```
 
 ## 구현된 화면 목록
@@ -105,11 +165,18 @@ dabaedal-settlement_admin/
 
 ### 결제 관리 (payment)
 - `/payment/list` - 결제 목록 조회
+- `/payment/simple` - 간편결제 목록
+- `/payment/deferred` - 후불결제 목록
 - `/payment/unregistered` - 단말기미등록 결제내역 처리
+- `/payment/receipt` - 결제 전표 조회
 
 ### 정산 관리 (settlement)
-- `/settlement/amount` - 업체 정산금액 조회
+- `/settlement/amount` - 업체 정산금액 조회 (지사별 통계)
+- `/settlement/amount/branch` - 지사별 정산금액 상세
+- `/settlement/amount/distributor` - 총판별 정산금액 상세
+- `/settlement/amount/agent` - 대리점별 정산금액 상세
 - `/settlement/hierarchical` - 계층별 정산 조회
+- `/settlement/hierarchical/detail` - 계층별 정산 상세
 - `/settlement/merchant/daily` - 가맹점별 일정산
 - `/settlement/merchant/period` - 가맹점별 기간정산
 - `/settlement/merchant/sales` - 가맹점별 거래내역조회
@@ -378,14 +445,42 @@ export const TABLE_STYLES = {
 Enum과 Helper 메서드를 정의합니다.
 
 ```typescript
-import { CompanyLevelHelper, BusinessTypeHelper, ContractStatusHelper } from '@/lib/enums'
+import {
+  CompanyLevelHelper,
+  BusinessTypeHelper,
+  ContractStatusHelper,
+  SettlementCycleHelper,
+  PaymentPurposeHelper,
+  PaymentStatusHelper,
+  UserTypeHelper,
+  PGCodeHelper,
+  BankHelper,
+} from '@/lib/enums'
+```
 
+### 정의된 Enum 목록
+
+| Enum | 설명 | 값 |
+|------|------|------|
+| `CompanyLevel` | 업체 레벨 | HEADQUARTERS, BRANCH, DISTRIBUTOR, AGENT, MERCHANT |
+| `BusinessType` | 사업자 유형 | NON_BUSINESS, INDIVIDUAL, CORPORATE, OTHER |
+| `ContractStatus` | 계약 상태 | APPLIED, ACTIVE, TERMINATED |
+| `SettlementCycle` | 정산 주기 | D_PLUS_0 (10M), D_PLUS_1 |
+| `PaymentPurpose` | 결제 목적 | DELIVERY_CHARGE, MONTHLY_RENT |
+| `PaymentStatus` | 결제 상태 | PENDING, SUCCESS, FAILED, CANCELLED |
+| `UserType` | 사용자 유형 | COMPANY, MERCHANT |
+| `PGCode` | PG 코드 | ALL, WEROUTE |
+
+### Helper 메서드 패턴
+
+```typescript
 // Enum 정의 패턴
 export const CompanyLevel = {
   HEADQUARTERS: 'HEADQUARTERS',
   BRANCH: 'BRANCH',
   DISTRIBUTOR: 'DISTRIBUTOR',
   AGENT: 'AGENT',
+  MERCHANT: 'MERCHANT',
 } as const
 
 export type CompanyLevelType = (typeof CompanyLevel)[keyof typeof CompanyLevel]
@@ -393,18 +488,55 @@ export type CompanyLevelType = (typeof CompanyLevel)[keyof typeof CompanyLevel]
 export const CompanyLevelLabel: Record<CompanyLevelType, string> = {
   HEADQUARTERS: '본사',
   BRANCH: '지사',
-  // ...
+  DISTRIBUTOR: '총판',
+  AGENT: '대리점',
+  MERCHANT: '가맹점',
+}
+
+export const CompanyLevelCode: Record<CompanyLevelType, number> = {
+  HEADQUARTERS: 0,
+  BRANCH: 1,
+  DISTRIBUTOR: 2,
+  AGENT: 3,
+  MERCHANT: 4,
 }
 
 // Helper 메서드
 export const CompanyLevelHelper = {
   getLabel: (code: CompanyLevelType): string => CompanyLevelLabel[code] || code,
+  getCode: (level: CompanyLevelType): number => CompanyLevelCode[level] ?? -1,
+  getLevelByCode: (code: number): CompanyLevelType | null => { ... },
   isValid: (code: string): code is CompanyLevelType => code in CompanyLevel,
   getOptions: () => Object.keys(CompanyLevel).map((key) => ({
     value: key as CompanyLevelType,
     label: CompanyLevelLabel[key as CompanyLevelType],
+    code: CompanyLevelCode[key as CompanyLevelType],
   })),
 }
+```
+
+### 은행 코드 Helper
+
+```typescript
+import { BankHelper, BANKS, MAIN_BANKS } from '@/lib/enums'
+
+// 은행 코드로 은행명 조회
+BankHelper.getName('004')  // '국민은행'
+
+// 은행명으로 은행 코드 조회
+BankHelper.getCode('국민은행')  // '004'
+
+// 유효성 검사
+BankHelper.isValid('004')  // true
+
+// 검색
+BankHelper.search('국민')  // [{ code: '004', name: '국민은행' }]
+
+// 전체 은행 목록
+BankHelper.getOptions()  // BANKS 배열 반환
+
+// 주요 은행 목록 (드롭다운용)
+BankHelper.getMainOptions()  // MAIN_BANKS 배열 반환
 ```
 
 ---
@@ -658,6 +790,53 @@ interface Column<T> {
 />
 ```
 
+## SearchSection
+
+검색 영역을 구성하는 컴포넌트들입니다.
+
+```typescript
+import { SearchSection, TabBar, TabButton, SearchForm, FormRow } from "@/components/common"
+
+// 검색 섹션 전체 래퍼
+<SearchSection>
+  <TabBar>
+    {DATE_TABS.map((tab) => (
+      <TabButton
+        key={tab}
+        active={selectedTab === tab}
+        onClick={() => handleDateTabClick(tab)}
+      >
+        {tab}
+      </TabButton>
+    ))}
+  </TabBar>
+  <SearchForm>
+    <FormRow label="등록일">
+      <input type="date" ... />
+    </FormRow>
+    <FormRow label="검색조건">
+      <select ... />
+      <input ... />
+    </FormRow>
+  </SearchForm>
+</SearchSection>
+```
+
+## CenterSelect / PaymentPurposeSelect
+
+헤더에서 센터 및 결제 목적을 선택하는 컴포넌트입니다.
+
+```typescript
+import { CenterSelect } from "@/components/common/center-select"
+import { PaymentPurposeSelect } from "@/components/common/payment-purpose-select"
+
+// 센터 선택 (본사 전용)
+<CenterSelect />
+
+// 결제 목적 선택 (배달비/월세)
+<PaymentPurposeSelect />
+```
+
 ---
 
 # 상태 관리
@@ -668,19 +847,52 @@ interface Column<T> {
 import { useAppContext } from "@/contexts/app-context"
 
 const {
+  // 센터 관리
   centerId, setCenterId,
+
+  // 결제 목적
   paymentPurpose, setPaymentPurpose,
-  user, isAuthenticated, logout,
-  sidebarOpen, toggleSidebar,
+
+  // 사용자 인증
+  user, setUser,
+  isAuthenticated, logout,
+
+  // 사이드바
+  sidebarOpen, toggleSidebar, setSidebarOpen,
+
+  // 테마
+  theme, toggleTheme, setTheme,
+
+  // 초기화 상태
   isInitialized
 } = useAppContext()
 ```
 
+### 사용자 정보 (IUser)
+
+```typescript
+interface IUser {
+  companyId?: number
+  loginId?: string      // 로그인 ID
+  name?: string         // 업체명 또는 가맹점명
+  level?: number        // 레벨 (0: 본사, 1: 지사, 2: 총판, 3: 대리점)
+  levelName?: string    // 레벨명 (본사, 지사, 총판, 대리점)
+  centerId?: number     // 센터 ID
+}
+```
+
+### JWT 토큰 기반 보안
+
+- `level`, `companyId`, `centerId`는 JWT payload에서 추출하여 사용 (localStorage 조작 방지)
+- 토큰 만료 시 자동으로 로그아웃 처리
+
 ## localStorage 키
-- `user`: 사용자 정보
+- `user`: 사용자 정보 (JSON)
 - `token`: JWT 토큰
 - `centerId`: 선택된 센터 ID
-- `paymentPurpose`: 선택된 결제 목적
+- `paymentPurpose`: 선택된 결제 목적 (DELIVERY_CHARGE | MONTHLY_RENT)
+- `sidebar-storage`: 사이드바 상태 (JSON)
+- `theme-storage`: 테마 설정 (JSON)
 
 ---
 
